@@ -1,4 +1,7 @@
+import jetbrains.buildServer.configs.kotlin.v2019_2.vcs.GitVcsRoot
+import jetbrains.buildServer.configs.kotlin.v2019_2.triggers.vcs
 import jetbrains.buildServer.configs.kotlin.v2019_2.*
+import jetbrains.buildServer.configs.kotlin.v2019_2.buildSteps.script
 
 /*
 The settings script is an entry point for defining a TeamCity
@@ -24,5 +27,52 @@ To debug in IntelliJ Idea, open the 'Maven Projects' tool window (View
 
 version = "2020.2"
 
+data class MicroserviceProject(val projectName: String, val vcsUrl: String, val deploy: Boolean)
+
+val projects = ArrayList<MicroserviceProject>()
+projects.add(MicroserviceProject("Movies Microservice","https://github.com/DanielGallo/microservice-movies", true))
+projects.add(MicroserviceProject("Users Microservice","https://github.com/DanielGallo/microservice-users", false))
+
+fun generateProject(proj: MicroserviceProject): Project {
+    val serviceVcsRoot = generateVcsRoot(proj)
+
+    return Project {
+        id(proj.vcsUrl.toId())
+        name = proj.projectName
+
+        vcsRoot(serviceVcsRoot)
+
+        buildType(BuildType {
+            name = "Build"
+
+            vcs {
+                root(serviceVcsRoot)
+            }
+
+            artifactRules = ". => %teamcity.project.id%.zip"
+
+            steps {
+                script {
+                    name = "Run Build"
+                    scriptContent = """
+                        npm install
+                    """.trimIndent()
+                }
+            }
+        })
+    }
+}
+
+fun generateVcsRoot(proj: MicroserviceProject): GitVcsRoot {
+    return GitVcsRoot{
+        name = proj.projectName
+        url = proj.vcsUrl
+        branch = "refs/heads/main"
+    }
+}
+
 project {
+    for (proj in projects) {
+        subProject(generateProject(proj))
+    }
 }
