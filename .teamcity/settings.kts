@@ -43,6 +43,7 @@ fun generateProject(proj: MicroserviceProject): Project {
         vcsRoot(serviceVcsRoot)
 
         buildType(BuildType {
+            id("build_" + proj.vcsUrl.toId())
             name = "Build"
 
             vcs {
@@ -64,7 +65,10 @@ fun generateProject(proj: MicroserviceProject): Project {
 }
 
 fun generateVcsRoot(proj: MicroserviceProject): GitVcsRoot {
+    val vcsId = "vcs_" + proj.vcsUrl
+
     return GitVcsRoot{
+        id(vcsId.toId())
         name = proj.projectName
         url = proj.vcsUrl
         branch = "refs/heads/main"
