@@ -44,8 +44,8 @@ fun generateProject(proj: MicroserviceProject): Project {
             script {
                 name = "Run Build"
                 scriptContent = """
-                        npm install
-                    """.trimIndent()
+                    npm install
+                """.trimIndent()
             }
         }
     }
@@ -69,14 +69,14 @@ fun generateProject(proj: MicroserviceProject): Project {
             script {
                 name = "NPM Install"
                 scriptContent = """
-                        npm install
-                    """.trimIndent()
+                    npm install
+                """.trimIndent()
             }
             script {
                 name = "Run Tests"
                 scriptContent = """
-                        ./node_modules/mocha/bin/mocha test --reporter mocha-teamcity-reporter
-                    """.trimIndent()
+                    ./node_modules/mocha/bin/mocha test --reporter mocha-teamcity-reporter
+                """.trimIndent()
             }
         }
     }
@@ -99,8 +99,8 @@ fun generateProject(proj: MicroserviceProject): Project {
             script {
                 name = "Run Deployment"
                 scriptContent = """
-                            echo "Deploying!"
-                        """.trimIndent()
+                    echo "Deploying!"
+                """.trimIndent()
             }
         }
     }
@@ -116,22 +116,18 @@ fun generateProject(proj: MicroserviceProject): Project {
 
         if (proj.deploy.equals(true)) {
             buildType(deploy)
+        }
 
-            sequential {
-                buildType(build)
-                buildType(test)
+        sequential {
+            buildType(build)
+            buildType(test)
+
+            if (proj.deploy.equals(true)) {
                 buildType(deploy)
             }
-
-            buildTypesOrder = arrayListOf(build, test, deploy)
-        } else {
-            sequential {
-                buildType(build)
-                buildType(test)
-            }
-
-            buildTypesOrder = arrayListOf(build, test)
         }
+
+        buildTypesOrder = arrayListOf(build, test, deploy)
     }
 }
 
