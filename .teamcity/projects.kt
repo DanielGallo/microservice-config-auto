@@ -1,6 +1,6 @@
 data class MicroserviceProject(val projectName: String, val vcsUrl: String, val deploy: Boolean)
 
-fun MicroserviceProjects(): ArrayList<MicroserviceProject> {
+fun microserviceProjects(): ArrayList<MicroserviceProject> {
     val projects = ArrayList<MicroserviceProject>()
 
     //projects.add(MicroserviceProject("Movies Microservice", "https://github.com/DanielGallo/microservice-movies", true))

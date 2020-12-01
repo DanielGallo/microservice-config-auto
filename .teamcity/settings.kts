@@ -127,7 +127,7 @@ fun generateVcsRoot(proj: MicroserviceProject): GitVcsRoot {
 }
 
 project {
-    val projects = MicroserviceProjects()
+    val projects = microserviceProjects()
 
     for (proj in projects) {
         subProject(generateProject(proj))
