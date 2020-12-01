@@ -122,11 +122,15 @@ fun generateProject(proj: MicroserviceProject): Project {
                 buildType(test)
                 buildType(deploy)
             }
+
+            buildTypesOrder = arrayListOf(build, test, deploy)
         } else {
             sequential {
                 buildType(build)
                 buildType(test)
             }
+
+            buildTypesOrder = arrayListOf(build, test)
         }
     }
 }
