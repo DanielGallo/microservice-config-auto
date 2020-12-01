@@ -30,87 +30,103 @@ version = "2020.2"
 fun generateProject(proj: MicroserviceProject): Project {
     val serviceVcsRoot = generateVcsRoot(proj)
 
+    val build = BuildType {
+        id("build_" + proj.vcsUrl.toId())
+        name = "Build"
+
+        vcs {
+            root(serviceVcsRoot)
+        }
+
+        artifactRules = ". => %teamcity.project.id%.zip"
+
+        steps {
+            script {
+                name = "Run Build"
+                scriptContent = """
+                        npm install
+                    """.trimIndent()
+            }
+        }
+    }
+
+    val test = BuildType {
+        id("test_" + proj.vcsUrl.toId())
+        name = "Test"
+
+        vcs {
+            root(serviceVcsRoot)
+        }
+
+        if (proj.deploy.equals(false)) {
+            triggers {
+                vcs {
+                }
+            }
+        }
+
+        steps {
+            script {
+                name = "NPM Install"
+                scriptContent = """
+                        npm install
+                    """.trimIndent()
+            }
+            script {
+                name = "Run Tests"
+                scriptContent = """
+                        ./node_modules/mocha/bin/mocha test --reporter mocha-teamcity-reporter
+                    """.trimIndent()
+            }
+        }
+    }
+
+    val deploy = BuildType {
+        id("deploy_" + proj.vcsUrl.toId())
+        name = "Deploy"
+        type = BuildTypeSettings.Type.DEPLOYMENT
+
+        vcs {
+            root(serviceVcsRoot)
+        }
+
+        triggers {
+            vcs {
+            }
+        }
+
+        steps {
+            script {
+                name = "Run Deployment"
+                scriptContent = """
+                            echo "Deploying!"
+                        """.trimIndent()
+            }
+        }
+    }
+
     return Project {
         id(proj.vcsUrl.toId())
         name = proj.projectName
 
         vcsRoot(serviceVcsRoot)
 
-        buildType(BuildType {
-            id("build_" + proj.vcsUrl.toId())
-            name = "Build"
-
-            vcs {
-                root(serviceVcsRoot)
-            }
-
-            artifactRules = ". => %teamcity.project.id%.zip"
-
-            steps {
-                script {
-                    name = "Run Build"
-                    scriptContent = """
-                        npm install
-                    """.trimIndent()
-                }
-            }
-        })
-
-        buildType(BuildType {
-            id("test_" + proj.vcsUrl.toId())
-            name = "Test"
-
-            vcs {
-                root(serviceVcsRoot)
-            }
-
-            if (proj.deploy.equals(false)) {
-                triggers {
-                    vcs {
-                    }
-                }
-            }
-
-            steps {
-                script {
-                    name = "NPM Install"
-                    scriptContent = """
-                        npm install
-                    """.trimIndent()
-                }
-                script {
-                    name = "Run Tests"
-                    scriptContent = """
-                        ./node_modules/mocha/bin/mocha test --reporter mocha-teamcity-reporter
-                    """.trimIndent()
-                }
-            }
-        })
+        buildType(build)
+        buildType(test)
 
         if (proj.deploy.equals(true)) {
-            buildType(BuildType {
-                id("deploy_" + proj.vcsUrl.toId())
-                name = "Deploy"
-                type = BuildTypeSettings.Type.DEPLOYMENT
+            buildType(deploy)
 
-                vcs {
-                    root(serviceVcsRoot)
-                }
-
-                triggers {
-                    vcs {
-                    }
-                }
-
-                steps {
-                    script {
-                        name = "Run Deployment"
-                        scriptContent = """
-                            echo "Deploying!"
-                        """.trimIndent()
-                    }
-                }
-            })
+            sequential {
+                buildType(build)
+                buildType(test)
+                buildType(deploy)
+            }
+        } else {
+            sequential {
+                buildType(build)
+                buildType(test)
+            }
         }
     }
 }
