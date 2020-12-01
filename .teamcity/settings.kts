@@ -38,7 +38,7 @@ fun generateProject(proj: MicroserviceProject): Project {
 
         buildType(BuildType {
             id("build_" + proj.vcsUrl.toId())
-            name = "Build and Test"
+            name = "Build"
 
             vcs {
                 root(serviceVcsRoot)
@@ -48,7 +48,7 @@ fun generateProject(proj: MicroserviceProject): Project {
 
             steps {
                 script {
-                    name = "Run Build and Test"
+                    name = "Run Build"
                     scriptContent = """
                         npm install
                     """.trimIndent()
