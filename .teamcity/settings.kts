@@ -27,12 +27,6 @@ To debug in IntelliJ Idea, open the 'Maven Projects' tool window (View
 
 version = "2020.2"
 
-data class MicroserviceProject(val projectName: String, val vcsUrl: String, val deploy: Boolean)
-
-val projects = ArrayList<MicroserviceProject>()
-projects.add(MicroserviceProject("Movies Microservice","https://github.com/DanielGallo/microservice-movies", true))
-projects.add(MicroserviceProject("Users Microservice","https://github.com/DanielGallo/microservice-users", false))
-
 fun generateProject(proj: MicroserviceProject): Project {
     val serviceVcsRoot = generateVcsRoot(proj)
 
@@ -61,6 +55,63 @@ fun generateProject(proj: MicroserviceProject): Project {
                 }
             }
         })
+
+        buildType(BuildType {
+            id("test_" + proj.vcsUrl.toId())
+            name = "Test"
+
+            vcs {
+                root(serviceVcsRoot)
+            }
+
+            if (proj.deploy.equals(false)) {
+                triggers {
+                    vcs {
+                    }
+                }
+            }
+
+            steps {
+                script {
+                    name = "NPM Install"
+                    scriptContent = """
+                        npm install
+                    """.trimIndent()
+                }
+                script {
+                    name = "Run Tests"
+                    scriptContent = """
+                        ./node_modules/mocha/bin/mocha test --reporter mocha-teamcity-reporter
+                    """.trimIndent()
+                }
+            }
+        })
+
+        if (proj.deploy.equals(true)) {
+            buildType(BuildType {
+                id("deploy_" + proj.vcsUrl.toId())
+                name = "Deploy"
+                type = BuildTypeSettings.Type.DEPLOYMENT
+
+                vcs {
+                    root(serviceVcsRoot)
+                }
+
+                triggers {
+                    vcs {
+                    }
+                }
+
+                steps {
+                    script {
+                        name = "Run Deployment"
+                        scriptContent = """
+                            echo "Deploying!"
+                        """.trimIndent()
+                    }
+                }
+            })
+        }
     }
 }
 
@@ -76,6 +127,8 @@ fun generateVcsRoot(proj: MicroserviceProject): GitVcsRoot {
 }
 
 project {
+    val projects = MicroserviceProjects()
+
     for (proj in projects) {
         subProject(generateProject(proj))
     }
